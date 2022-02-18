@@ -269,7 +269,7 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
   timer();
   
-  ST7735_WriteString(8, 27, time, Font_16x26, ST7735_BLACK, ST7735_YELLOW);
+  ST7735_WriteString(8, 27, time, Font_16x26, ST7735_MAGENTA, ST7735_YELLOW);
 }
 
 /* USER CODE END 4 */
