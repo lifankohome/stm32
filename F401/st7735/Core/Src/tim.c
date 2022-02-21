@@ -34,9 +34,9 @@ void MX_TIM1_Init(void)
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 2500;
+  htim1.Init.Prescaler = 2500 - 1;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 10000;
+  htim1.Init.Period = 10000 - 1;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
@@ -64,9 +64,9 @@ void MX_TIM3_Init(void)
   TIM_OC_InitTypeDef sConfigOC = {0};
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 250;
+  htim3.Init.Prescaler = 25 - 1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 100;
+  htim3.Init.Period = 1000 - 1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -80,7 +80,7 @@ void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
