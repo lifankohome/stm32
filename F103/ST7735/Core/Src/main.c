@@ -27,6 +27,7 @@
 
 #include "st7735.h"
 #include "fonts.h"
+#include "flash.h"
 
 /* USER CODE END Includes */
 
@@ -47,6 +48,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+char display[] = "0123456789";
 
 /* USER CODE END PV */
 
@@ -93,9 +96,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
   
   ST7735_Init();
-  ST7735_FillScreen(ST7735_YELLOW);
+  ST7735_FillScreen(ST7735_BLACK);
   
-  char display[] = "0123456789";
+  for(uint16_t i=0;i<10;i++) {
+    display[i] = flash_get(i) + '0';
+  }
 
   /* USER CODE END 2 */
 
@@ -111,7 +116,7 @@ int main(void)
     
     HAL_Delay(200);
     
-    ST7735_WriteString(0, 0, display, Font_11x18, ST7735_COLOR565(0xff,0x44,0x00), ST7735_YELLOW);
+    ST7735_WriteString(25, 15, display, Font_11x18, ST7735_YELLOW, ST7735_BLACK);
   }
   /* USER CODE END 3 */
 }
