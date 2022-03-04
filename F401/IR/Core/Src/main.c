@@ -50,10 +50,16 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+void check_ir(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+uint32_t pulse_low_from = 0, pulse_high_from = 0;
+uint32_t ir_data = 0;
+uint8_t ir_end = 1;
 
 /* USER CODE END 0 */
 
@@ -101,7 +107,9 @@ int main(void)
     
 //    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
     
-    HAL_Delay(200);
+//    HAL_Delay(200);
+    
+    check_ir();
   }
   /* USER CODE END 3 */
 }
@@ -151,75 +159,44 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+void check_ir() {
+  if(ir_end == 0 && HAL_GetTick() - pulse_high_from > 5) {
+    ir_end = 1;
+    
+    HAL_Delay(10);
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    HAL_Delay(2);
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+  }
+}
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-  static uint32_t irdata = 0;
-  
-  static uint32_t pulse_low_from = 0, pulse_high_from = 0;
-  static uint8_t pulse_cnt = 0;
-  static uint8_t started = 0;
-  
-  static uint32_t period = 0;
+  uint8_t period = 0;
   
   if (GPIO_Pin == IR_Pin) {
     HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
     
     if(HAL_GPIO_ReadPin(IR_GPIO_Port, IR_Pin)) {
       pulse_high_from = HAL_GetTick();
-      
       period = HAL_GetTick() - pulse_low_from;
       
-      if(started == 0) {
-        if(period <= 10 && period >= 8) {
-          // 2
-          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-          pulse_cnt = 1;
-          
-          started = 1;
-        }
-      } else {
-        pulse_cnt++;
-        
-        if(period <= 1) {
-          // 4
-          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-          
-//          // error: 562.5us should less than 1ms
-//          // or end: data transmit complete
-//          started = 0;
-//          pulse_cnt = 0;
-//          // END
-        }
-      }
+      HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
     } else {
       pulse_low_from = HAL_GetTick();
-
-      if(started) {
-        period = HAL_GetTick() - pulse_high_from;
-        
-        if(pulse_cnt == 1) {
-          if(period >= 4 && period <= 5) {
-            // 3
-            HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-            
-            pulse_cnt++;
-          } else {
-            started = 0;
-            pulse_cnt = 0;
-          }
-        } else if(pulse_cnt > 1) {
-          irdata <<= 1;
-          
-          if(period <= 1) {
-            // 5
-            HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-          } else {
-            // 55
-            HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-          }
-        }
-      } else {
-        // 1
+      period = HAL_GetTick() - pulse_high_from;
+      
+      ir_end = 0;
+      
+      if(period <= 1) {
+        ir_data <<= 1;
+        ir_data |= 0x00;
         HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+      } else {
+        if(period < 2) {
+          ir_data <<= 1;
+          ir_data |= 0x01;
+          HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+        }
       }
     }
     
