@@ -2,6 +2,7 @@
 "ir\startup_stm32f401xc.o"
 "ir\main.o"
 "ir\gpio.o"
+"ir\tim.o"
 "ir\stm32f4xx_it.o"
 "ir\stm32f4xx_hal_msp.o"
 "ir\stm32f4xx_hal_tim.o"
