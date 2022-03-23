@@ -51,9 +51,12 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+.idea/
+
 H750/st7735/MDK-ARM/st7735/
 
 F401/st7735/MDK-ARM/st7735/
-F401/st7735/MDK-ARM/IR/
+F401/IR/MDK-ARM/IR/
+F401/RTOS/MDK-ARM/RTOS/
 
 F103/ST7735/MDK-ARM/ST7735/

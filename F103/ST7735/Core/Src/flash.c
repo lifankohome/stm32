@@ -65,20 +65,20 @@ void Flash_Read_Data(uint32_t StartPageAddress, uint32_t *RxBuf, uint16_t number
   }
 }
 
-void flash_set(uint16_t addr, uint8_t val) {
-  uint8_t flash[256] = {0xff};
+void flash_set(uint16_t addr, uint32_t val) {
+  uint32_t flash[2] = {0xff};
   
-  Flash_Read_Data(FLASH_ADDR, (uint32_t *)flash, 64);
+  Flash_Read_Data(FLASH_ADDR, (uint32_t *)flash, 2);
   
   flash[addr] = val;
   
-  Flash_Write_Data(FLASH_ADDR, (uint32_t *)flash, 64);
+  Flash_Write_Data(FLASH_ADDR, (uint32_t *)flash, 2);
 }
 
-uint32_t flash_get(uint16_t addr) {
-  uint8_t flash[256] = {0xff};
+uint32_t flash_get(uint8_t addr) {
+  uint32_t flash[2] = {0xff};
   
-  Flash_Read_Data(FLASH_ADDR, (uint32_t *)flash, 64);
+  Flash_Read_Data(FLASH_ADDR, (uint32_t *)flash, 2);
   
   return flash[addr];
 }

@@ -6,8 +6,8 @@
 #define FLASH_ADDR 0x0801fe00
 
 
-uint32_t flash_get(uint16_t addr);
-void flash_set(uint16_t addr, uint8_t val);
+void flash_set(uint16_t addr, uint32_t val);
+uint32_t flash_get(uint8_t addr);
 
 
 #endif
