@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
+    @file           : main.c
+    @brief          : Main program body
   ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
+    @attention
+
+    <h2><center>&copy; Copyright (c) 2022 STMicroelectronics.
+    All rights reserved.</center></h2>
+
+    This software component is licensed by ST under BSD 3-Clause license,
+    the "License"; You may not use this file except in compliance with the
+    License. You may obtain a copy of the License at:
+                           opensource.org/licenses/BSD-3-Clause
+
   ******************************************************************************
-  */
+*/
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -57,6 +57,9 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+void timer_start(void);
+uint16_t timer_end(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -64,7 +67,7 @@ void SystemClock_Config(void);
 
 const uint8_t OV_WIDTH = 160;
 const uint8_t OV_HEIGHT = 80;
-uint8_t image[OV_HEIGHT][OV_WIDTH*2] = {0};
+uint8_t image[OV_HEIGHT][OV_WIDTH * 2] = {0};
 
 uint16_t ov_id;
 uint32_t fps = 0;
@@ -104,34 +107,35 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_I2C1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-	
-	ST7735_Init();
+
+  ST7735_Init();
   ST7735_FillScreen(ST7735_BLACK);
-  
+
   ov_id = ov2640_ReadID(CAMERA_I2C_ADDRESS);
-  
-  if(ov_id != OV2640_ID) {
+
+  if (ov_id != OV2640_ID) {
     ST7735_WriteString(8, 27, "No OV2640", Font_16x26, ST7735_RED, ST7735_BLACK);
-    while(1);
+    while (1);
   }
-  
+
   // initial 0v2640
   HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_RESET);
   HAL_Delay(10);
   HAL_GPIO_WritePin(RESET_GPIO_Port, RESET_Pin, GPIO_PIN_SET);
 
   ov2640_Init(CAMERA_I2C_ADDRESS, CAMERA_R160x120);
-//  ov2640_Config(CAMERA_I2C_ADDRESS, CAMERA_BLACK_WHITE, CAMERA_BLACK_WHITE_BW, CAMERA_BLACK_WHITE_BW);
-  
+  ov2640_Config(CAMERA_I2C_ADDRESS, CAMERA_BLACK_WHITE, CAMERA_BLACK_WHITE_BW, CAMERA_BLACK_WHITE_BW);
+
   CAMERA_IO_Write(CAMERA_I2C_ADDRESS, 0XFF, 0X00);
-  CAMERA_IO_Write(CAMERA_I2C_ADDRESS, 0XD3, 48);
+  CAMERA_IO_Write(CAMERA_I2C_ADDRESS, 0XD3, 12);
   CAMERA_IO_Write(CAMERA_I2C_ADDRESS, 0XFF, 0X01);
   CAMERA_IO_Write(CAMERA_I2C_ADDRESS, 0x11, 1);
-	
-  HAL_Delay(1000);
+
+  HAL_Delay(200);
   HAL_TIM_Base_Start_IT(&htim1);
-  
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -141,9 +145,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		
-		HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-    
+
+    HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+
     HAL_Delay(100);
   }
   /* USER CODE END 3 */
@@ -195,72 +199,74 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 void get_image() {
-  while(HAL_GPIO_ReadPin(VSYNC_GPIO_Port, VSYNC_Pin));
-  
-  for(uint8_t index_row=0;index_row<OV_HEIGHT;index_row++) {
-    while(!HAL_GPIO_ReadPin(HREF_GPIO_Port, HREF_Pin));
-    
+  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+  while (HAL_GPIO_ReadPin(VSYNC_GPIO_Port, VSYNC_Pin));
+
+  for (uint8_t index_row = 0; index_row < OV_HEIGHT; index_row++) {
+    while (!HAL_GPIO_ReadPin(HREF_GPIO_Port, HREF_Pin));
+
     uint16_t index_col = 0;
-    while(HAL_GPIO_ReadPin(HREF_GPIO_Port, HREF_Pin)){
-      while(!HAL_GPIO_ReadPin(PCLK_GPIO_Port, PCLK_Pin));
-      
-      uint8_t data = 0x00;
-      
-      data |= HAL_GPIO_ReadPin(Y0_GPIO_Port, Y0_Pin);
-      data |= HAL_GPIO_ReadPin(Y1_GPIO_Port, Y1_Pin)<<1;
-      data |= HAL_GPIO_ReadPin(Y2_GPIO_Port, Y2_Pin)<<2;
-      data |= HAL_GPIO_ReadPin(Y3_GPIO_Port, Y3_Pin)<<3;
-      data |= HAL_GPIO_ReadPin(Y4_GPIO_Port, Y4_Pin)<<4;
-      data |= HAL_GPIO_ReadPin(Y5_GPIO_Port, Y5_Pin)<<5;
-      data |= HAL_GPIO_ReadPin(Y6_GPIO_Port, Y6_Pin)<<6;
-      data |= HAL_GPIO_ReadPin(Y7_GPIO_Port, Y7_Pin)<<7;
-      
-      image[index_row][index_col] = data;
-      
-      while(HAL_GPIO_ReadPin(PCLK_GPIO_Port, PCLK_Pin));
-      fps++;
-      
-      index_col++;
-      
-      if(index_col >= OV_WIDTH*2) {
-        break;
-      }
+    uint8_t data = 0x00;
+    
+    while (HAL_GPIO_ReadPin(HREF_GPIO_Port, HREF_Pin)) {
+      while (!HAL_GPIO_ReadPin(PCLK_GPIO_Port, PCLK_Pin));
+
+      data = 0x00;
+      data |= (Y0_GPIO_Port->IDR & 0xf000) >> 12;
+      data |= (Y4_GPIO_Port->IDR & 0x0f00) >> 4;
+
+      image[index_row][index_col++] = data;
+
+      while (HAL_GPIO_ReadPin(PCLK_GPIO_Port, PCLK_Pin));
     }
   }
-  
+
   // display
-  uint16_t i=0,j=0;
-  for(j=0;j<OV_HEIGHT;j++){
-    for(i=0;i<OV_WIDTH;i++){
-      if(j<10 &&i < 35){
-//        ST7735_DrawPixel(i,j,(image[j][i*2]<<8) | image[j][i*2+1]);
-      }else {
-        ST7735_DrawPixel(i,j,(image[j][i*2]<<8) | image[j][i*2+1]);
+  uint16_t i = 0, j = 0;
+  for (j = 0; j < OV_HEIGHT; j++) {
+    for (i = 0; i < OV_WIDTH; i++) {
+      if (j < 10 && i < 35) {
+      } else {
+        // red filter
+        // ST7735_DrawPixel(i, j, (image[j][i * 2] | (image[j][i * 2 + 1] << 8)) & 0xf800);
+        // green filter
+        // ST7735_DrawPixel(i, j, (image[j][i * 2] | (image[j][i * 2 + 1] << 8)) & 0x07e0);
+        // blue filter
+        // ST7735_DrawPixel(i, j, (image[j][i * 2] | (image[j][i * 2 + 1] << 8)) & 0x001f);
+        
+        ST7735_DrawPixel(i, j, (image[j][i * 2] | (image[j][i * 2 + 1] << 8)));
       }
     }
   }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
-//  // row num
-//  while(!HAL_GPIO_ReadPin(HREF_GPIO_Port, HREF_Pin));
-//  while(HAL_GPIO_ReadPin(HREF_GPIO_Port, HREF_Pin)){
-//    while(!HAL_GPIO_ReadPin(PCLK_GPIO_Port, PCLK_Pin));
-//    while(HAL_GPIO_ReadPin(PCLK_GPIO_Port, PCLK_Pin));
-//    fps++;
-//  }
-  
-  info[4] = fps%10 + '0';
-  info[3] = fps/10%10 + '0';
-  info[2] = fps/100%10 + '0';
-  info[1] = fps/1000%10 + '0';
-  info[0] = fps/10000%10 + '0';
-  
-  ST7735_WriteString(0, 0, info, Font_7x10, ST7735_RED, ST7735_BLACK);
-  
-  fps = 0;
+  timer_start();
   
   get_image();
+  
+  fps = timer_end();
+  
+  info[4] = fps % 10 + '0';
+  info[3] = fps / 10 % 10 + '0';
+  info[2] = fps / 100 % 10 + '0';
+  info[1] = fps / 1000 % 10 + '0';
+  info[0] = fps / 10000 % 10 + '0';
+
+  ST7735_WriteString(0, 0, info, Font_7x10, ST7735_GREEN, ST7735_BLACK);
+}
+
+void timer_start() {
+  HAL_TIM_Base_Start_IT(&htim2);
+  __HAL_TIM_SET_COUNTER(&htim2, 0);
+}
+
+uint16_t timer_end() {
+  uint16_t period = __HAL_TIM_GetCounter(&htim2);
+  
+  HAL_TIM_Base_Stop_IT(&htim2);
+  
+  return period;
 }
 
 /* USER CODE END 4 */
